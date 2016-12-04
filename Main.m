@@ -47,7 +47,7 @@ CONSTANTS.WRoostV = CONSTANTS.WRoostV * ForceConversion;
 
 % Simulation Parameters
 NumBirds = 6;
-NumTimeSteps = 200;
+NumTimeSteps = 7;
 % Bird Storage
 BIRD = struct('px', 1, 'py', 2, 'pz', 3, ...
     'vx', 4, 'vy', 5, 'vz', 6, ...
@@ -182,19 +182,17 @@ for trial=1:TRIALS
             fprintf('bird %d has angle: %f\n', itr, test_angle);
             %% FLIGHT FORCE EQUATIONS ==============================================================
             % (15a, b, c)
-%             simplifiedLift = speed^2/CONSTANTS.v0^2 * CONSTANTS.M * CONSTANTS.g * ...
-%                 birdStorage(BIRD.ezx:BIRD.ezz, itr, t);
-%             simplifiedDrag = CONSTANTS.CL_CD*speed^2/CONSTANTS.v0^2 * CONSTANTS.M * ...
-%                 CONSTANTS.g * birdStorage(BIRD.ezx:BIRD.ezz, itr, t);
-%             thrust = CONSTANTS.T0 * birdStorage(BIRD.exx:BIRD.exz, itr, t);
-% 
-%             % (16)
-%             flightForce = simplifiedLift + ...
-%                 simplifiedDrag + ...
-%                 thrust + ...
-%                 (CONSTANTS.M * [0;0;-CONSTANTS.g]);
-            
-            flightForce = [0;0;0];
+            simplifiedLift = speed^2/CONSTANTS.v0^2 * CONSTANTS.M * CONSTANTS.g * ...
+                birdStorage(BIRD.ezx:BIRD.ezz, itr, t);
+            simplifiedDrag = CONSTANTS.CL_CD*speed^2/CONSTANTS.v0^2 * CONSTANTS.M * ...
+                CONSTANTS.g * birdStorage(BIRD.ezx:BIRD.ezz, itr, t);
+            thrust = CONSTANTS.T0 * birdStorage(BIRD.exx:BIRD.exz, itr, t);
+
+            % (16)
+            flightForce = simplifiedLift + ...
+                simplifiedDrag + ...
+                thrust + ...
+                (CONSTANTS.M * [0;0;-CONSTANTS.g]);
 
             %% (21, 22) update velocity and position
             birdStorage(BIRD.vx:BIRD.vz, itr, t+1) = birdStorage(BIRD.vx:BIRD.vz, itr, t) + ...
@@ -235,12 +233,12 @@ for trial=1:TRIALS
     subplot(2,2,trial)
     for itr=1:NumBirds
         % plot velocity over time.
-        plot(1:NumTimeSteps, sqrt(sum(squeeze(birdStorage(BIRD.vx:BIRD.vz, itr, 1:NumTimeSteps)).^2))); hold on;
+%         plot(1:NumTimeSteps, sqrt(sum(squeeze(birdStorage(BIRD.vx:BIRD.vz, itr, 1:NumTimeSteps)).^2))); hold on;
         
-%         for step=1:NumTimeSteps - 1            
-%             scatter3(squeeze(birdStorage(BIRD.px, itr, step)), ...
-%                 squeeze(birdStorage(BIRD.py, itr, step)), ...
-%                 squeeze(birdStorage(BIRD.pz, itr, step)), colors(mod(step, length(colors)) + 1)); hold on;
-%         end
+        for step=1:NumTimeSteps - 1            
+            scatter3(squeeze(birdStorage(BIRD.px, itr, step)), ...
+                squeeze(birdStorage(BIRD.py, itr, step)), ...
+                squeeze(birdStorage(BIRD.pz, itr, step)), colors(mod(step, length(colors)) + 1)); hold on;
+        end
     end
 end
