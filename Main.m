@@ -10,7 +10,7 @@ CONSTANTS = struct(...
     'dt', 5, ... %ms         integration time step
     'du', 50, ... %ms        Reaction time !!check s if you change!!
     'v0', 0.01, ... %m/ms    Cruise Speed
-    'M', 0.08, ... %kg      Mass
+    'M', 0.08, ... %kg       Mass
     'CL_CD', 3.3, ... %      Lift-drag coefficient
     'L0', 0.78, ... % N      Default Lift
     'D0', 0.24, ... %N       Default Drag
@@ -29,7 +29,7 @@ CONSTANTS = struct(...
     'wa', 0.5, ... %N        Weighting factor alignment force
     'wc', 1, ... %N          Weighting factor cohesion force
     'Cc', 0.35, ... %        Critical Centrality 
-    'wSigma', 0.01, ... %N   Weight factor random force
+    'wSigma', 0.01,    ... %N   Weight factor random force
     'RRoost', 150, ... %m    Radius of Roost
     'WRoostH', 0.01, ... %N/m Weighting factor horizontal attraction to roost
     'WRoostV', 0.2 ... %N    Weighting factor vertical attraction to roost
@@ -46,21 +46,22 @@ CONSTANTS.WRoostH = CONSTANTS.WRoostH * ForceConversion;
 CONSTANTS.WRoostV = CONSTANTS.WRoostV * ForceConversion;
 
 % Simulation Parameters
-NumBirds = 6;
-NumTimeSteps = 7;
+NumBirds = 20;
+NumTimeSteps = 2000;
 % Bird Storage
 BIRD = struct('px', 1, 'py', 2, 'pz', 3, ...
-    'vx', 4, 'vy', 5, 'vz', 6, ...
+    'v', 4, ...
     'exx', 7, 'exy', 8, 'exz', 9, ...
     'eyx', 10, 'eyy', 11, 'eyz', 12, ...
     'ezx', 13, 'ezy', 14, 'ezz', 15, ...
     'ba', 16, ... %banking angle
     'r', 17); % adaptive interaction range 
 
-TRIALS = 4;
+TRIALS = 1;
 
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'w',];
 for trial=1:TRIALS
+    tic;
     birdStorage = zeros(length(fieldnames(BIRD)), NumBirds, NumTimeSteps);
 
 %     %% Set Initial Conditions
@@ -73,24 +74,23 @@ for trial=1:TRIALS
         initial_cylinder_radius * sin(theta);...
         height];
 
-    initial_velocity = 10*rand(3, NumBirds);
 %     birdStorage(BIRD.vx:BIRD.vz, :, 1) = initial_velocity;
-    birdStorage(BIRD.vx:BIRD.vz, :, 1) = ones(3, NumBirds);
-    birdStorage(BIRD.exx:BIRD.exz, :, 1) = birdStorage(BIRD.vx:BIRD.vz, :, 1) ./ sqrt(sum(birdStorage(BIRD.vx:BIRD.vz, :, 1).^2));
-    birdStorage(BIRD.eyx:BIRD.eyz, :, 1) = ...
-        [-1 * birdStorage(BIRD.exz, :, 1);...
-        zeros(1, NumBirds);...
-        birdStorage(BIRD.exx, :, 1)];
+    birdStorage(BIRD.v, :, 1) = 2*CONSTANTS.v0*rand(1, NumBirds);
+%     birdStorage(BIRD.v, :, 1) = [0.0091, 0.0079, 0.0101, 0.0002, 0.0080, 0.0098];
+    initialFwdDirections = [rand(2, NumBirds); zeros(1, NumBirds)];
+    birdStorage(BIRD.exx:BIRD.exz, :, 1) = initialFwdDirections ./ sqrt(sum(initialFwdDirections.^2));
+    birdStorage(BIRD.ezx:BIRD.ezz, :, 1) = [zeros(2, NumBirds); ones(1, NumBirds)];
+    
     for itr = 1:NumBirds
-        birdStorage(BIRD.ezx:BIRD.ezz, itr, 1) = cross(...
+        birdStorage(BIRD.eyx:BIRD.eyz, itr, 1) = cross(...
             birdStorage(BIRD.exx:BIRD.exz, itr, 1), ...
-            birdStorage(BIRD.eyx:BIRD.eyz, itr, 1));
+            birdStorage(BIRD.ezx:BIRD.ezz, itr, 1));
     end
 
     birdStorage(BIRD.r, :, 1:CONSTANTS.du / CONSTANTS.dt) = CONSTANTS.RRoost^2;
 
     for t=1:NumTimeSteps-1
-        tic
+%         tic
         for itr=1:NumBirds
             % Compute Neighborhoods and Interaction Range
             %% (3) Ni = findNeighborsInRadius(birdStorage, itr, t, birdStorage(BIRD.r, itr, t));
@@ -131,7 +131,7 @@ for trial=1:TRIALS
             separationForce = -CONSTANTS.ws/length(Ni) * sum(g .* vectorDistances, 2);
 
             %% (8) alignment(birdStorage, itr, t, NiStar)
-            diffInDirections = sum(birdStorage(BIRD.exx:BIRD.exz, NiStar, t) - direction, 2);
+            diffInDirections = sum(birdStorage(BIRD.exx:BIRD.exz, birds(NiStar), t) - direction, 2);
             alignment = CONSTANTS.wa * diffInDirections / norm(diffInDirections);
 
             %% 
@@ -165,21 +165,21 @@ for trial=1:TRIALS
             roostAttraction = horizontalRoostAttraction + verticalRootAttraction;
 
             %% (1) speedControl(birdStorage, itr, t)
-            speed = norm(birdStorage(BIRD.vx:BIRD.vz, itr, t));
+            speed = birdStorage(BIRD.v, itr, t);
             speedControl = (CONSTANTS.M / CONSTANTS.T) * (CONSTANTS.v0 - speed) * direction;
-%             %% (13) randomForce()
-%             randomForce = CONSTANTS.wSigma * [rand;rand;rand];
-% 
-%             %% (14) steeringForce
-%             steeringForce = socialForce + ...
-%                 roostAttraction + ...
-%                 speedControl + ...
-%                 randomForce;
+            %% (13) randomForce()
+            randomForce = CONSTANTS.wSigma * [rand;rand;rand];
+
+            %% (14) steeringForce
+            steeringForce = socialForce + ...
+                roostAttraction + ...
+                speedControl + ...
+                randomForce;
 
             steeringForce = speedControl;
-            test_angle = dot(birdStorage(BIRD.vx:BIRD.vz, itr, t), direction) / (speed * norm(direction));
-            fprintf('bird %d has speedControl: %f\n', itr, norm(speedControl));
-            fprintf('bird %d has angle: %f\n', itr, test_angle);
+%             test_angle = dot(birdStorage(BIRD.vx:BIRD.vz, itr, t), direction) / (speed * norm(direction));
+%             fprintf('bird %d has speedControl: %f\n', itr, norm(speedControl));
+%             fprintf('bird %d has angle: %f\n', itr, test_angle);
             %% FLIGHT FORCE EQUATIONS ==============================================================
             % (15a, b, c)
             simplifiedLift = speed^2/CONSTANTS.v0^2 * CONSTANTS.M * CONSTANTS.g * ...
@@ -194,51 +194,77 @@ for trial=1:TRIALS
                 thrust + ...
                 (CONSTANTS.M * [0;0;-CONSTANTS.g]);
 
+%             flightForce = thrust;
+            flightForce = [0;0;0];
             %% (21, 22) update velocity and position
-            birdStorage(BIRD.vx:BIRD.vz, itr, t+1) = birdStorage(BIRD.vx:BIRD.vz, itr, t) + ...
-                CONSTANTS.dt/CONSTANTS.M * (steeringForce + flightForce);
-            birdStorage(BIRD.exx:BIRD.exz, itr, t+1) = birdStorage(BIRD.vx:BIRD.vz, itr, t+1) / ...
-                norm(birdStorage(BIRD.vx:BIRD.vz, itr, t+1));
-
+            forceSum = steeringForce + flightForce;
+            velocityVectorUpdate = (birdStorage(BIRD.v, itr, t)*direction) + ... %curr velocity
+                (CONSTANTS.dt/CONSTANTS.M * forceSum);
+            birdStorage(BIRD.v, itr, t+1) = norm(velocityVectorUpdate);
+            birdStorage(BIRD.exx:BIRD.exz, itr, t+1) = velocityVectorUpdate/norm(velocityVectorUpdate);
+            
             % Update position
             birdStorage(BIRD.px:BIRD.pz, itr, t+1) = birdStorage(BIRD.px:BIRD.pz, itr, t) + ...
-                birdStorage(BIRD.vx:BIRD.vz, itr, t+1) * CONSTANTS.dt;
+                velocityVectorUpdate * CONSTANTS.dt;
 
-%             %% (17) lateralAcceleration
-%             lateralAcceleration = (steeringForce * birdStorage(BIRD.eyx:BIRD.eyz, itr, t)') / ...
-%                 CONSTANTS.M * birdStorage(BIRD.eyx:BIRD.eyz, itr, t);
-% 
-%             %% (18, 19, 20) banking angle
-%             tanBin = CONSTANTS.wBin * norm(lateralAcceleration) * CONSTANTS.dt;
-%             tanBout = CONSTANTS.wBout * sin(birdStorage(BIRD.ba, itr, t)) * CONSTANTS.dt;
-%             bap1 = birdStorage(BIRD.ba, itr, t) + atan(tanBin) - atan(tanBout);
-% 
-%             % Update Banking angle and orientation
-%             birdStorage(BIRD.ba, itr, t+1) = bap1;
-%             temp_ey = ...
-%                 (cos(bap1) * birdStorage(BIRD.eyx:BIRD.eyz, itr, t) + ...
-%                 sin(bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t));
-%             birdStorage(BIRD.eyx:BIRD.eyz, itr, t+1) = temp_ey/norm(temp_ey);
-%             temp_ez = ...
-%                 -1 * (cos(pi - bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t) + ...
-%                 sin(pi - bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t));
-%             birdStorage(BIRD.eyx:BIRD.eyz, itr, t+1) = temp_ez/norm(temp_ez);
-%             if mod(itr, 50) == 0
+            %% (17) lateralAcceleration
+            lateralAcceleration = dot(steeringForce, birdStorage(BIRD.eyx:BIRD.eyz, itr, t)) / ...
+                CONSTANTS.M * birdStorage(BIRD.eyx:BIRD.eyz, itr, t);
+
+            %% (18, 19, 20) banking angle
+            tanBin = CONSTANTS.wBin * norm(lateralAcceleration) * CONSTANTS.dt;
+            tanBout = CONSTANTS.wBout * sin(birdStorage(BIRD.ba, itr, t)) * CONSTANTS.dt;
+            bap1 = birdStorage(BIRD.ba, itr, t) + atan(tanBin) - atan(tanBout);
+
+            % Update Banking angle and orientation
+            birdStorage(BIRD.ba, itr, t+1) = bap1;
+            temp_ey = ...
+                (cos(bap1) * birdStorage(BIRD.eyx:BIRD.eyz, itr, t) + ...
+                sin(bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t));
+            birdStorage(BIRD.eyx:BIRD.eyz, itr, t+1) = temp_ey/norm(temp_ey);
+            temp_ez = ...
+                -1 * (cos(pi - bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t) + ...
+                sin(pi - bap1) * birdStorage(BIRD.ezx:BIRD.ezz, itr, t));
+            birdStorage(BIRD.ezx:BIRD.ezz, itr, t+1) = temp_ez/norm(temp_ez);
+%             if mod(itr, 10) == 0
 %                 fprintf('Completed bird %d\n', itr)
 %             end
+            if(itr == 1)
+                subplot(3, 1, 1)
+                scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
+                    birdStorage(BIRD.eyx:BIRD.eyz, itr, t))); hold on;
+                subplot(3, 1, 2)
+                scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
+                    birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
+                subplot(3, 1, 3)
+                scatter(t, dot(birdStorage(BIRD.eyx:BIRD.eyz, itr, t),...
+                    birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
+            end
+                
         end 
-        fprintf('====== TIMESTEP======= %d\n', t)
-        toc
-    end
-    subplot(2,2,trial)
-    for itr=1:NumBirds
-        % plot velocity over time.
-%         plot(1:NumTimeSteps, sqrt(sum(squeeze(birdStorage(BIRD.vx:BIRD.vz, itr, 1:NumTimeSteps)).^2))); hold on;
-        
-        for step=1:NumTimeSteps - 1            
-            scatter3(squeeze(birdStorage(BIRD.px, itr, step)), ...
-                squeeze(birdStorage(BIRD.py, itr, step)), ...
-                squeeze(birdStorage(BIRD.pz, itr, step)), colors(mod(step, length(colors)) + 1)); hold on;
+        if mod(t, 50) == 0
+            fprintf('Completed timestep %d\n', t)
         end
+%         fprintf('====== TIMESTEP======= %d\n', t)
+%         toc;
+    end
+    toc;
+%     subplot(2,2,trial)
+    figure(2)
+    for itr=1:6
+        % plot velocity over time.
+%         subplot(1,6, itr)
+%         plot(1:NumTimeSteps, squeeze(birdStorage(BIRD.v, itr, 1:NumTimeSteps))); hold on;
+        plot3(squeeze(birdStorage(BIRD.px, itr, 1:NumTimeSteps)), ...
+            squeeze(birdStorage(BIRD.py, itr, 1:NumTimeSteps)), ...
+            squeeze(birdStorage(BIRD.pz, itr, 1:NumTimeSteps)), 'b'); hold on;
+        scatter3(squeeze(birdStorage(BIRD.px, itr, NumTimeSteps)), ...
+            squeeze(birdStorage(BIRD.py, itr, NumTimeSteps)), ...
+            squeeze(birdStorage(BIRD.pz, itr, NumTimeSteps)), 'b*'); hold on;
+%         for step=1:NumTimeSteps - 1            
+%             scatter3(squeeze(birdStorage(BIRD.px, itr, step)), ...
+%                 squeeze(birdStorage(BIRD.py, itr, step)), ...
+%                 squeeze(birdStorage(BIRD.pz, itr, step)), colors(mod(step, length(colors)) + 1)); hold on;
+%         end
     end
 end
