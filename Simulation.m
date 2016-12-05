@@ -5,7 +5,7 @@ Y = 2;
 Z = 3;
 
 NumBirds = 1;
-NumTimeSteps = 5000;
+NumTimeSteps = 10000;
 
 posOverTime = zeros(3, NumBirds, NumTimeSteps);
 velOverTime = zeros(3, NumBirds, NumTimeSteps);
@@ -16,14 +16,14 @@ loadConstants;
 epsilon = 1e-12;
 
 %% - Initial Conditions
-posOverTime(:, 1, 1) = [0;0;100];
+posOverTime(:, 1, 1) = [20;1;10];
 % velOverTime(:, 1, 1) = v0*[1;0;1]/norm([1;0;1]);
 % velOverTime(:, 2, 1) = (v0 - 0.009)*[1;0;0];
-temp = [0;1;0]
+temp = [1;0;0]
 velOverTime(:, 1, 1) = v0*temp / norm(temp);
 % velOverTime(:, 1, 1) = [1;1;1];
 % should result in ex = [1 1 1], ey = [1 -1 0], ez = [-1 -1 2]
-bankingOverTime(1, 1) = pi/4;
+bankingOverTime(1, 1) = 0;
 
 DEBUG_FORCES = zeros(NumBirds, NumTimeSteps);
 DEBUG_GAMMA = zeros(NumBirds, NumTimeSteps);
@@ -35,14 +35,23 @@ for timeStep=1:NumTimeSteps
 %     velOverTime(:, :, timeStep) = velOverTime(:, :, timeStep) .* ...
 %         double(abs(velOverTime(:, :, timeStep)) > epsilon);
     for bird=1:NumBirds
-
+        % Bird Properties \/==================
         fwdDir = velOverTime(:, bird, timeStep) / norm(velOverTime(:, bird, timeStep));
         [~, wingDir, upDir] = fwdDirAndBeta2basis(fwdDir, bankingOverTime(bird, timeStep));
         speed = norm(velOverTime(:, bird, timeStep));        
-     
-        % SteeringForces \/===================        
+        position = posOverTime(:, bird, timeStep);     
+        % Bird Properites /\==================
+        % SteeringForces \/===================
         speedControlForce = mass/Tau * (v0 - speed) * fwdDir;
-        steeringForce = speedControlForce;
+        altitudeControlForce = -wAlt * (position(Z) - z0) * [0;0;1];
+        
+        normalToRoost = [position(1:2)/norm(position(1:2)); 0];
+        roostAttractionForce = -sign(dot(normalToRoost, wingDir)) * WRoost * ...
+            (.5 + .5 * dot(fwdDir, normalToRoost)) * wingDir;
+        
+        steeringForce = speedControlForce + altitudeControlForce + ...
+            roostAttractionForce;
+%         steeringForce = roostAttractionForce;
 %         steeringForce = [0;0;0];
         % SteeringForces /\===================
         % FlightForces \/=====================
@@ -52,7 +61,7 @@ for timeStep=1:NumTimeSteps
         gravityForce = [0;0; -mass * g];
         DEBUG_FORCES(bird,timeStep) = norm(liftForce + gravityForce);
         flightForce = liftForce + dragForce + thrustForce + gravityForce;
-%         flightForce = [0;0;0];
+        flightForce = [0;0;0];
         % FlightForces /\=====================
         force = steeringForce + flightForce;
 

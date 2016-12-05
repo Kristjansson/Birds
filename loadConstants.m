@@ -17,7 +17,7 @@ sigma = 1.77;
 rsep = 4;
 
 wAlt = 0.2;
-WRoost = 0.01;
+WRoost = 0.5; %Adjusted from 0.01 to produce tighter orbits. 
 wSigma = 0.01;
 ws = 1;
 wc = 1;
