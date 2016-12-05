@@ -16,7 +16,7 @@ rh = 0.2;
 sigma = 1.77;
 rsep = 4;
 
-w_alt = 0.2;
+wAlt = 0.2;
 WRoost = 0.01;
 wSigma = 0.01;
 ws = 1;
