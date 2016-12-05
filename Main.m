@@ -46,7 +46,7 @@ CONSTANTS.WRoostH = CONSTANTS.WRoostH * ForceConversion;
 CONSTANTS.WRoostV = CONSTANTS.WRoostV * ForceConversion;
 
 % Simulation Parameters
-NumBirds = 20;
+NumBirds = 4;
 NumTimeSteps = 2000;
 % Bird Storage
 BIRD = struct('px', 1, 'py', 2, 'pz', 3, ...
@@ -194,8 +194,7 @@ for trial=1:TRIALS
                 thrust + ...
                 (CONSTANTS.M * [0;0;-CONSTANTS.g]);
 
-%             flightForce = thrust;
-            flightForce = [0;0;0];
+            flightForce = thrust;
             %% (21, 22) update velocity and position
             forceSum = steeringForce + flightForce;
             velocityVectorUpdate = (birdStorage(BIRD.v, itr, t)*direction) + ... %curr velocity
@@ -229,17 +228,17 @@ for trial=1:TRIALS
 %             if mod(itr, 10) == 0
 %                 fprintf('Completed bird %d\n', itr)
 %             end
-            if(itr == 1)
-                subplot(3, 1, 1)
-                scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
-                    birdStorage(BIRD.eyx:BIRD.eyz, itr, t))); hold on;
-                subplot(3, 1, 2)
-                scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
-                    birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
-                subplot(3, 1, 3)
-                scatter(t, dot(birdStorage(BIRD.eyx:BIRD.eyz, itr, t),...
-                    birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
-            end
+%             if(itr == 1)
+%                 subplot(3, 1, 1)
+%                 scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
+%                     birdStorage(BIRD.eyx:BIRD.eyz, itr, t))); hold on;
+%                 subplot(3, 1, 2)
+%                 scatter(t, dot(birdStorage(BIRD.exx:BIRD.exz, itr, t),...
+%                     birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
+%                 subplot(3, 1, 3)
+%                 scatter(t, dot(birdStorage(BIRD.eyx:BIRD.eyz, itr, t),...
+%                     birdStorage(BIRD.ezx:BIRD.ezz, itr, t))); hold on;
+%             end
                 
         end 
         if mod(t, 50) == 0
