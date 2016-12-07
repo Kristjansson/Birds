@@ -1,4 +1,5 @@
 function [ex, ey, ez] = fwdDirAndBeta2basis(fwdDir, beta)
+%     Assume the fwdDir is normalized!
     normxy = norm(fwdDir(1:2));
     cosyaw = fwdDir(1) / normxy;
     sinyaw = fwdDir(2) / normxy;
@@ -7,11 +8,11 @@ function [ex, ey, ez] = fwdDirAndBeta2basis(fwdDir, beta)
         cosyaw = 0;
         sinyaw = sign(fwdDir(2));    
     end
-    normxz = sqrt(fwdDir(1)^2 + fwdDir(3)^2);
-    cospitch = fwdDir(1) / normxz;
-    sinpitch = fwdDir(3) / normxz;
+    
+    cospitch = norm(fwdDir(1:2));
+    sinpitch = fwdDir(3);
     if isnan(cospitch) || isnan(sinpitch)
-        cospitch = 1;
+        cospitch = sign(fwdDir(1));
         sinpitch = 0;
     end
     cosroll = cos(beta);

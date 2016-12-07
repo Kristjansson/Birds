@@ -11,13 +11,13 @@ Rroost = 150;
 du = 0.05;
 s = 0.005;
 Rmax = 100;
-nc = 6.5;
+nc = 6;
 rh = 0.2;
 sigma = 1.77;
 rsep = 4;
 
 wAlt = 0.2;
-WRoost = 0.5; %Adjusted from 0.01 to produce tighter orbits. 
+WRoost = 1; %Adjusted from 0.01 to produce tighter orbits. 
 wSigma = 0.01;
 ws = 1;
 wc = 1;
@@ -25,6 +25,7 @@ wa = 0.5;
 wBin = 10;
 wBout = 1;
 
+wr = s/du;
 
 % g = 9.81;  %m/s^2 gravity
 % dt = 0.005;  %s      integration time step
