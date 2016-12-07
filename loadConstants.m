@@ -1,9 +1,9 @@
 dt = 0.005;
 v0 = 10;
 mass = 0.08;
-g = 9.81;
+gravity = 9.81;
 CD_CL = 3.3;
-L0 = mass * g;
+L0 = mass * gravity;
 T0 = CD_CL * L0;
 Tau = 1;
 z0 = 10;
@@ -16,8 +16,8 @@ rh = 0.2;
 sigma = 1.77;
 rsep = 4;
 
-wAlt = 0.2;
-WRoost = 1; %Adjusted from 0.01 to produce tighter orbits. 
+wAlt = 0.05; % Make stronger? 0.2 => 0.8
+WRoost = 0.5; %Adjusted from 0.01 to produce tighter orbits. 
 wSigma = 0.01;
 ws = 1;
 wc = 1;
